@@ -15,10 +15,10 @@ function App() {
   const handleLogin = async () => {
     try {
       await FHIR.oauth2.authorize({
-        client_id: String(EPIC_CLIENT_ID),
-        scope: String(import.meta.env.VITE_SCOPE) || "launch openid profile patient/Observation.read patient/Condition.read patient/MedicationRequest.read offline_access",
-        iss: String(import.meta.env.VITE_ISS) || 'https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4',
-        redirect_uri: String(import.meta.env.VITE_REDIRECT_URI) || 'http://localhost:5173/callback/',
+        client_id: `${EPIC_CLIENT_ID}`,
+        scope: "launch openid profile patient/Observation.read patient/Condition.read patient/MedicationRequest.read offline_access",
+        iss: `${ISS}` || 'https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4',
+        redirect_uri: `${REDIRECT_URI}` || 'http://localhost:5173/callback/',
       });
     } catch (err) {
       console.error('Launch failed', err);
