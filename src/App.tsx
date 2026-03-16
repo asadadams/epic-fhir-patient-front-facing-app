@@ -6,19 +6,14 @@ function App() {
   const ISS = import.meta.env.VITE_ISS;
   const REDIRECT_URI = import.meta.env.VITE_REDIRECT_URI;
 
-  console.log('Environment variables:');
-  console.log(`EPIC_CLIENT_ID: ${EPIC_CLIENT_ID}`);
-  console.log(`ISS: ${ISS}`);
-  console.log(`REDIRECT_URI: ${REDIRECT_URI}`);
-
 
   const handleLogin = async () => {
     try {
       await FHIR.oauth2.authorize({
-        client_id: 'b0ef8ada-c83f-4163-994c-b592521db69c',
+        client_id: EPIC_CLIENT_ID,
         scope: "launch openid profile patient/Observation.read patient/Condition.read patient/MedicationRequest.read offline_access",
-        iss: 'https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4',
-        redirect_uri: 'https://epic-fhir-patient-front-facing-app.vercel.app/callback/',
+        iss: ISS || 'https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4',
+        redirect_uri: REDIRECT_URI || 'http://localhost:5173/callback/',
       });
     } catch (err) {
       console.error('Launch failed', err);
