@@ -3,7 +3,7 @@ import FHIR from "fhirclient";
 
 interface PatientData {
   patient?: any;
-  resources?: Record<string, any>;  // renamed from everything for clarity
+  resources?: Record<string, any>;
   loading: boolean;
   error?: string;
 }
@@ -12,11 +12,11 @@ export default function Callback() {
   const isInitialMount = useRef(true);
   const [client, setClient] = useState<any>(null);
   const [data, setData] = useState<PatientData>({
-    loading: true,  // start as loading
+    loading: true,
     error: undefined,
   });
 
-  const [obsLoading, setObsLoading] = useState(false); // separate loading for Observation
+  const [obsLoading, setObsLoading] = useState(false);
 
   useEffect(() => {
     if (isInitialMount.current) {
@@ -48,7 +48,6 @@ export default function Callback() {
     setData((prev) => ({ ...prev, loading: true, error: undefined }));
 
     try {
-      // Get patient (this almost always works if token is valid)
       const patient = await smartClient.patient.read();
       console.log("Patient:", patient.id);
 
@@ -78,7 +77,7 @@ export default function Callback() {
     console.log("Token expires in:", client.state?.tokenResponse?.expires_in);
     console.log("Token scopes:", client.state?.tokenResponse?.scope);
 
-    setObsLoading(true); // start Observation loading
+    setObsLoading(true);
 
     const results: Record<string, any> = {};
 
@@ -86,16 +85,16 @@ export default function Callback() {
       const bundle = await client.request(
         `Observation?patient=${client.patient.id}&limit=50&category=laboratory`,
         {
-          pageLimit: 0, // get all pages
-          flat: true,   // optional: flattens bundle entries
+          pageLimit: 0,
+          flat: true,
         }
       );
 
-      results['Observation'] = bundle;
+      results["Observation"] = bundle;
       console.log(`Observation count:`, bundle?.length || 0);
     } catch (err: any) {
       console.warn(`FailedObservation:`, err.message);
-      results['Observation'] = { error: err.message };
+      results["Observation"] = { error: err.message };
     }
 
     setData((prev) => ({
@@ -103,7 +102,95 @@ export default function Callback() {
       resources: results,
     }));
 
-    setObsLoading(false); // end Observation loading
+    setObsLoading(false);
+  };
+
+  const renderPatientTable = (patient: any) => {
+    if (!patient) return null;
+
+    return (
+      <table style={{ width: "100%", borderCollapse: "collapse", marginTop: "1rem" }}>
+        <tbody>
+          <tr style={{ borderBottom: "1px solid #ddd" }}>
+            <td style={{ padding: "12px", fontWeight: "bold", width: "30%" }}>Name</td>
+            <td style={{ padding: "12px" }}>{patient.name?.[0]?.text || "—"}</td>
+          </tr>
+          <tr style={{ borderBottom: "1px solid #ddd" }}>
+            <td style={{ padding: "12px", fontWeight: "bold" }}>Gender</td>
+            <td style={{ padding: "12px" }}>{patient.gender || "—"}</td>
+          </tr>
+          <tr style={{ borderBottom: "1px solid #ddd" }}>
+            <td style={{ padding: "12px", fontWeight: "bold" }}>Birth Date</td>
+            <td style={{ padding: "12px" }}>{patient.birthDate || "—"}</td>
+          </tr>
+          <tr style={{ borderBottom: "1px solid #ddd" }}>
+            <td style={{ padding: "12px", fontWeight: "bold" }}>Marital Status</td>
+            <td style={{ padding: "12px" }}>{patient.maritalStatus?.text || "—"}</td>
+          </tr>
+          <tr style={{ borderBottom: "1px solid #ddd" }}>
+            <td style={{ padding: "12px", fontWeight: "bold" }}>Address</td>
+            <td style={{ padding: "12px" }}>
+              {patient.address?.[0]?.text || "—"}
+            </td>
+          </tr>
+          <tr style={{ borderBottom: "1px solid #ddd" }}>
+            <td style={{ padding: "12px", fontWeight: "bold" }}>Phone (Work)</td>
+            <td style={{ padding: "12px" }}>
+              {patient.telecom?.find((t: any) => t.use === "work")?.value || "—"}
+            </td>
+          </tr>
+          <tr style={{ borderBottom: "1px solid #ddd" }}>
+            <td style={{ padding: "12px", fontWeight: "bold" }}>Phone (Mobile)</td>
+            <td style={{ padding: "12px" }}>
+              {patient.telecom?.find((t: any) => t.use === "mobile")?.value || "—"}
+            </td>
+          </tr>
+          <tr style={{ borderBottom: "1px solid #ddd" }}>
+            <td style={{ padding: "12px", fontWeight: "bold" }}>Email</td>
+            <td style={{ padding: "12px" }}>
+              {patient.telecom?.find((t: any) => t.system === "email")?.value || "—"}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    );
+  };
+
+  const renderObservationsTable = (observations: any[]) => {
+    if (!observations || observations.length === 0) return <p>No observations found.</p>;
+
+    const filtered = observations.filter((item: any) => item.resourceType === "Observation");
+
+    return (
+      <table style={{ width: "100%", borderCollapse: "collapse", marginTop: "1rem" }}>
+        <thead>
+          <tr >
+            <th style={{ padding: "12px", textAlign: "left", borderBottom: "2px solid #ddd" }}>Date</th>
+            <th style={{ padding: "12px", textAlign: "left", borderBottom: "2px solid #ddd" }}>Test Name</th>
+            <th style={{ padding: "12px", textAlign: "left", borderBottom: "2px solid #ddd" }}>Value</th>
+            <th style={{ padding: "12px", textAlign: "left", borderBottom: "2px solid #ddd" }}>Category</th>
+          </tr>
+        </thead>
+        <tbody>
+          {filtered.map((obs: any, index: number) => (
+            <tr key={index} style={{ borderBottom: "1px solid #ddd" }}>
+              <td style={{ padding: "12px" }}>
+                {obs.effectiveDateTime ? new Date(obs.effectiveDateTime).toLocaleDateString() : "—"}
+              </td>
+              <td style={{ padding: "12px" }}>{obs.code?.text || obs.code?.coding?.[0]?.display || "—"}</td>
+              <td style={{ padding: "12px" }}>
+                {obs.valueQuantity?.value !== undefined 
+                  ? `${obs.valueQuantity.value} ${obs.valueQuantity.unit || ""}` 
+                  : "—"}
+              </td>
+              <td style={{ padding: "12px" }}>
+                {obs.category?.[0]?.text || "Laboratory"}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    );
   };
 
   if (data.loading) {
@@ -133,9 +220,7 @@ export default function Callback() {
           {data.patient && (
             <div style={{ margin: "2rem 0" }}>
               <h3>Patient Information</h3>
-              <pre style={{ maxHeight: "300px", overflow: "auto" }}>
-                {JSON.stringify(data.patient, null, 2)}
-              </pre>
+              {renderPatientTable(data.patient)}
             </div>
           )}
 
@@ -159,10 +244,14 @@ export default function Callback() {
               <h3>Fetched Resources</h3>
               {Object.entries(data.resources).map(([type, res]) => (
                 <div key={type} style={{ marginBottom: "2rem" }}>
-                  <h4>{type} ({res?.length || 0} items)</h4>
-                  <pre style={{ maxHeight: "300px", overflow: "auto" }}>
-                    {JSON.stringify(res, null, 2)}
-                  </pre>
+                  <h4>{type} ({Array.isArray(res) ? res.length : 0} items)</h4>
+                  {type === "Observation" && Array.isArray(res) ? (
+                    renderObservationsTable(res)
+                  ) : (
+                    <pre style={{ maxHeight: "300px", overflow: "auto" }}>
+                      {JSON.stringify(res, null, 2)}
+                    </pre>
+                  )}
                 </div>
               ))}
             </div>
