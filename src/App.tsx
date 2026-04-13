@@ -11,9 +11,12 @@ function App() {
     try {
       await FHIR.oauth2.authorize({
         client_id: EPIC_CLIENT_ID,
-        scope: "launch openid profile patient/Observation.read patient/Condition.read patient/MedicationRequest.read offline_access",
-        iss: ISS || 'https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4',
+        scope: "launch openid profile patient/MedicationOrder.rs patient/Patient.rs patient/Observation.rs patient/Condition.rs patient/MedicationRequest.rs offline_access",
+        // iss: ISS || 'https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4',
+        // iss:'https://fhir-ehr.sandboxcerner.com/r4/1ac244e6-d930-4a8e-b35b-973276d03fa3',
+        // iss: 'https://fhir-myrecord.cerner.com/r4/ec2458f2-1e24-41c8-b71b-0e701af7583d',
         redirect_uri: REDIRECT_URI || 'http://localhost:5173/callback/',
+        launch: '86c650cc-ddd7-48e0-93c7-7a1fb400db05'
       });
     } catch (err) {
       console.error('Launch failed', err);
